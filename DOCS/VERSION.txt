@@ -1,0 +1,5 @@
+Version del instalador:
+
+1.0.0 RC1 "Snow Lynx"
+
+SOLO PARA OPENSTACK ICEHOUSE !!!

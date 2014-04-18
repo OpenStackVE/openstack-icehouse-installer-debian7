@@ -1,0 +1,7 @@
+1.0.0 RC1 - 18-Abril-2014
+- Se prueba con la versión RC2 en gplhost.
+- Cambios generales para adaptar el instalador original
+  para Havana en la nueva versión (Icehouse).
+- Se cambia nuestro message broker por defecto a RabbitMQ.
+- Todos los módulos probados y operativos.
+
