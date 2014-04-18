@@ -1,3 +1,6 @@
+1.0.0 RC2 - 18-Abril-2014
+- Corrección menor en módulo cinderinstall.sh
+
 1.0.0 RC1 - 18-Abril-2014
 - Se prueba con la versión RC2 en gplhost.
 - Cambios generales para adaptar el instalador original
