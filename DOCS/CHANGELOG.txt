@@ -1,3 +1,8 @@
+1.0.0.deb7 RC4 - 19-Abril-2014
+- Corrección menor en módulo swiftinstall.sh.
+- Correción de "typo" para variable de limpieza
+  en swift "cleanupdeviceatuninstall".
+
 1.0.0 RC3 - 19-Abril-2014
 - Correcciones menores en módulos de instalación y
   configuración de heat y swift.

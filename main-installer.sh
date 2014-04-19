@@ -10,7 +10,7 @@
 # Primera versión para Icehouse (debian: Abril 19 del 2014
 #
 # Script principal
-# Versión 1.0.0.RC3 "Snow Lynx"
+# Versión 1.0.0.deb7.RC4 "Snow Lynx"
 # 19 de Abril del 2014
 #
 
@@ -42,7 +42,7 @@ case $1 in
 	echo "INSTALADOR DE OPENSTACK ICEHOUSE PARA DEBIAN 7"
 	echo "Realizado por Reynaldo R. Martinez P."
 	echo "E-Mail: TigerLinux@Gmail.com"
-	echo "Versión 1.0.0.RC3 \"Snow Lynx\" - Abril 19, 2014"
+	echo "Versión 1.0.0.deb7.RC4 \"Snow Lynx\" - Abril 19, 2014"
 	echo ""
 	echo "Se verificaran los prerequisitos"
 	echo "Si alguno de los prerequisitos falla, se informará y se detendrá el proceso"

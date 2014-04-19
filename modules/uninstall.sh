@@ -118,7 +118,7 @@ apt-get -y autoremove
 
 rm -f /tmp/heat-seed.txt
 
-if [ $cleanundeviceatuninstall == "yes" ]
+if [ $cleanupdeviceatuninstall == "yes" ]
 then
 	rm -rf /srv/node/$swiftdevice/accounts
 	rm -rf /srv/node/$swiftdevice/containers

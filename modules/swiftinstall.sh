@@ -258,7 +258,9 @@ chown -R swift:swift /var/lib/keystone-signing-swift
 if [ $ceilometerinstall == "yes" ]
 then
         openstack-config --set /etc/swift/proxy-server.conf filter:ceilometer use "egg:ceilometer#swift"
-	openstack-config --set /etc/swift/proxy-server.conf pipeline:main "healthcheck cache authtoken keystoneauth ceilometer proxy-server"
+	# El manual dice que hay que hacer el siguiente paso, pero esto impide que funcione swifg
+	# se deja comentado hasta investigar mas
+	# openstack-config --set /etc/swift/proxy-server.conf pipeline:main pipeline "healthcheck cache authtoken keystoneauth ceilometer proxy-server"
 fi
 
 /etc/init.d/memcached start
