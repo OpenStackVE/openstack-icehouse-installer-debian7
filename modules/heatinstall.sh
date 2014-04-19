@@ -272,8 +272,10 @@ openstack-config --set /etc/heat/heat.conf keystone_authtoken admin_password $he
 openstack-config --set /etc/heat/heat.conf keystone_authtoken auth_host $keystonehost
 openstack-config --set /etc/heat/heat.conf keystone_authtoken auth_port 35357
 openstack-config --set /etc/heat/heat.conf keystone_authtoken auth_protocol http
-openstack-config --set /etc/heat/heat.conf keystone_authtoken auth_uri http://$keystonehost:35357/v2.0/
+openstack-config --set /etc/heat/heat.conf keystone_authtoken auth_uri http://$keystonehost:5000/v2.0/
 openstack-config --set /etc/heat/heat.conf keystone_authtoken signing_dir /tmp/keystone-signing-heat
+
+openstack-config --set /etc/heat/heat.conf ec2authtoken auth_uri http://$keystonehost:5000/v2.0/
  
 openstack-config --set /etc/heat/heat.conf DEFAULT control_exchange openstack
  

@@ -1,3 +1,7 @@
+1.0.0 RC3 - 19-Abril-2014
+- Correcciones menores en módulos de instalación y
+  configuración de heat y swift.
+
 1.0.0 RC2 - 18-Abril-2014
 - Corrección menor en módulo cinderinstall.sh
 
