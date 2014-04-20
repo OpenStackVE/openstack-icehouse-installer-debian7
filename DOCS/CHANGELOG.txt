@@ -1,3 +1,8 @@
+1.0.1.deb7 - 19-Abril-2014
+- Primera versión lista para producción. Basada
+  en paquetes ya oficiales en el repositorio
+  de debian (gplhost).
+
 1.0.0.deb7 RC4 - 19-Abril-2014
 - Corrección menor en módulo swiftinstall.sh.
 - Correción de "typo" para variable de limpieza
