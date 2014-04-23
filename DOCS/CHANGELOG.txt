@@ -1,3 +1,9 @@
+1.0.2.deb7 - 23-Abril-2014
+- Cambios en módulo de base de datos para forzar
+  la creación de las BD's en UTF8 cuando se usa
+  MariaDB/MySQL 5.5.
+- Cambios menores en la documentación general.
+
 1.0.1.deb7 - 19-Abril-2014
 - Primera versión lista para producción. Basada
   en paquetes ya oficiales en el repositorio

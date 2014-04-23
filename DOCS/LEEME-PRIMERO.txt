@@ -7,9 +7,10 @@ Caracas, Venezuela.
 
 Este instalador fue realizado para automatizar las tareas de creación de una
 infraestructura de virtualización basada en OpenStack. Hasta el momento,
-existen dos "sabores" del instalador, uno para Debian 7 y otra para Centos 6.
+existen tres "sabores" del instalador, uno para Debian 7, uno para Centos 6 y
+uno para Ubuntu 14.04 LTS.
 
-Ambas versiones producen un OpenStack utilizable en producción, pero recomen-
+Las tres versiones producen un OpenStack utilizable en producción, pero recomen-
 damos dado que Icehouse aun está muy nuevo probar muy bien antes de colocarlo
 en ambientes de producción. Si tiene dudas, use Havana en producción e Icehouse
 en desarrollo y haga todas las pruebas que pueda antes de colocarlo en
@@ -17,13 +18,16 @@ ambientes de producción "real".
 
 En resumen, este instalador puede producir un OpenStack Icehouse completamente
 utilizable en ambientes de producción, pero aun así recomendamos seguir usando
-las versiones para havana (centos6/debian7) hasta que Icehouse madure lo sufi-
-ciente !. Recuerde que el factor "bugs" no depende de nosotros, sino del pro-
-yecto OpenStack y de los proyectos que empaquetan para centos y debian.
+las versiones para havana (centos6/debian7/Unbuntu1404lts) hasta que Icehouse
+madure lo suficiente !. Recuerde que el factor "bugs" no depende de nosotros,
+sino del proyecto OpenStack y de los proyectos que empaquetan para centos, debian
+y ubuntu.
 
 También tome en cuenta que "hasta la fecha" (y eso podría cambiar en el futuro)
 los paquetes de Centos (provistos por el proyecto RDO de RedHat) tienden a
 actualizarse mas a menudo que los paquetes para Debian 7 en "gplhost".
+
+Los paquetes de Ubuntu son los que normalemte están mas actualizados.
 
 ## Uso del Instalador.
 
@@ -210,7 +214,7 @@ El script utiliza las siguientes opciones:
 
     > **IMPORTANTE**: El script "openstack-control.sh" tiene la gran ventaja de subir (o
     > bajar) todos los servicios de openstack en el orden correcto. Tanto los
-    > paquetes de debian como los de centos colocan el orden no precisamente
+    > paquetes de debian/ubuntu como los de centos colocan el orden no precisamente
     > "óptimo". Recomendación: colocar lo siguiente en el /etc/rc.d/rc.local del
     > servidor para forzar a que los servicios de OpenStack arranquen en el orden
     > correcto:
@@ -288,7 +292,7 @@ serán instalados):
 * requeriments.sh
 * messagebrokerinstall.sh
 * databaseinstall.sh
-* requeriments-extras.sh (sólo presente en el "sabor" de debian 7)
+* requeriments-extras.sh (sólo presente para Debian 7 y Ubuntu Server 14.04 LTS)
 * keystoneinstall.sh
 * swiftinstall.sh
 * glanceinstall.sh
@@ -360,6 +364,13 @@ de debian (ver "NOTAS.txt").
 
 3. Instale y configure OpenVSWitch (de nuevo, ver "NOTAS.txt").
 
+#### Ubuntu 14.0.4 LTS:
+
+1. Instale Ubuntu Server 14.04 LTS de manera estandar y seleccione como paquete adicional
+"OpenSSH Server". Instale y configure el servicio ntpd. Se recomienda también usar ntpdate.
+
+2. Instale y configure OpenVSWitch (ver "NOTAS.txt").
+
 ### Cinder:
 
 Si va a usar CINDER con lvm-iscsi, asegúrese de tener una partición o disco libre para crear un LVM
@@ -398,7 +409,7 @@ cualquier otro sistema de archivos soportado por Linux.
 
 ### Arquitectura:
 
-Tanto en debian como en centos, debe elegir utilizar 64 bits
+Ya sea que use Centos, Debian o Ubuntu, debe elegir utilizar 64 bits
 (amd64/x86_64). No trate de instalar OpenStack en 32 bits.
 
 ### Servicio NTP:

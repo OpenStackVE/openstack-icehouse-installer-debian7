@@ -133,7 +133,7 @@ then
 		echo "user=$mysqldbadm" >> /root/.my.cnf
 		echo "password=$mysqldbpassword" >> /root/.my.cnf
 		echo "Creando database de keystone"
-		echo "CREATE DATABASE $keystonedbname;"|$mysqlcommand
+		echo "CREATE DATABASE $keystonedbname default character set utf8;"|$mysqlcommand
 		echo "GRANT ALL ON $keystonedbname.* TO '$keystonedbuser'@'%' IDENTIFIED BY '$keystonedbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $keystonedbname.* TO '$keystonedbuser'@'localhost' IDENTIFIED BY '$keystonedbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $keystonedbname.* TO '$keystonedbuser'@'$keystonehost' IDENTIFIED BY '$keystonedbpass';"|$mysqlcommand
@@ -147,7 +147,7 @@ then
 		sync
 
 		echo "Creando database de glance"
-		echo "CREATE DATABASE $glancedbname;"|$mysqlcommand
+		echo "CREATE DATABASE $glancedbname default character set utf8;"|$mysqlcommand
 		echo "GRANT ALL ON $glancedbname.* TO '$glancedbuser'@'%' IDENTIFIED BY '$glancedbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $glancedbname.* TO '$glancedbuser'@'localhost' IDENTIFIED BY '$glancedbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $glancedbname.* TO '$glancedbuser'@'$glancehost' IDENTIFIED BY '$glancedbpass';"|$mysqlcommand
@@ -161,7 +161,7 @@ then
 		sync
 
 		echo "Creando database de cinder"
-		echo "CREATE DATABASE $cinderdbname;"|$mysqlcommand
+		echo "CREATE DATABASE $cinderdbname default character set utf8;"|$mysqlcommand
 		echo "GRANT ALL ON $cinderdbname.* TO '$cinderdbuser'@'%' IDENTIFIED BY '$cinderdbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $cinderdbname.* TO '$cinderdbuser'@'localhost' IDENTIFIED BY '$cinderdbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $cinderdbname.* TO '$cinderdbuser'@'$cinderhost' IDENTIFIED BY '$cinderdbpass';"|$mysqlcommand
@@ -175,7 +175,7 @@ then
 		sync
 
 		echo "Creando database de neutron"
-		echo "CREATE DATABASE $neutrondbname;"|$mysqlcommand
+		echo "CREATE DATABASE $neutrondbname default character set utf8;"|$mysqlcommand
 		echo "GRANT ALL ON $neutrondbname.* TO '$neutrondbuser'@'%' IDENTIFIED BY '$neutrondbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $neutrondbname.* TO '$neutrondbuser'@'localhost' IDENTIFIED BY '$neutrondbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $neutrondbname.* TO '$neutrondbuser'@'$neutronhost' IDENTIFIED BY '$neutrondbpass';"|$mysqlcommand
@@ -189,7 +189,7 @@ then
 		sync
 
 		echo "Creando database de nova"
-		echo "CREATE DATABASE $novadbname;"|$mysqlcommand
+		echo "CREATE DATABASE $novadbname default character set utf8;"|$mysqlcommand
 		echo "GRANT ALL ON $novadbname.* TO '$novadbuser'@'%' IDENTIFIED BY '$novadbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $novadbname.* TO '$novadbuser'@'localhost' IDENTIFIED BY '$novadbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $novadbname.* TO '$novadbuser'@'$novahost' IDENTIFIED BY '$novadbpass';"|$mysqlcommand
@@ -203,7 +203,7 @@ then
 		sync
 
 		echo "Creando database de heat"
-		echo "CREATE DATABASE $heatdbname;"|$mysqlcommand
+		echo "CREATE DATABASE $heatdbname default character set utf8;"|$mysqlcommand
 		echo "GRANT ALL ON $heatdbname.* TO '$heatdbuser'@'%' IDENTIFIED BY '$heatdbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $heatdbname.* TO '$heatdbuser'@'localhost' IDENTIFIED BY '$heatdbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $heatdbname.* TO '$heatdbuser'@'$heathost' IDENTIFIED BY '$heatdbpass';"|$mysqlcommand
@@ -217,7 +217,7 @@ then
 		sync
 
 		echo "Creando database de horizon"
-		echo "CREATE DATABASE $horizondbname;"|$mysqlcommand
+		echo "CREATE DATABASE $horizondbname default character set utf8;"|$mysqlcommand
 		echo "GRANT ALL ON $horizondbname.* TO '$horizondbuser'@'%' IDENTIFIED BY '$horizondbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $horizondbname.* TO '$horizondbuser'@'localhost' IDENTIFIED BY '$horizondbpass';"|$mysqlcommand
 		echo "GRANT ALL ON $horizondbname.* TO '$horizondbuser'@'$horizonhost' IDENTIFIED BY '$horizondbpass';"|$mysqlcommand
