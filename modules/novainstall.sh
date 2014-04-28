@@ -140,9 +140,22 @@ echo "neutron-common neutron/local_ip string $neutronhost" >> /tmp/neutron-seed.
 
 debconf-set-selections /tmp/neutron-seed.txt
 
+
+case $consoleflavor in
+"spice")
+	consoletype="spicehtml5"
+	consolesvc="nova-spicehtml5proxy"
+;;
+"vnc")
+	consoletype="novnc"
+	consolesvc="nova-novncproxy"
+;;
+esac
+
 echo "nova-common nova/admin-password password $keystoneadminpass" > /tmp/nova-seed.txt
 echo "nova-common nova/configure_db boolean false" >> /tmp/nova-seed.txt
-echo "nova-consoleproxy nova-consoleproxy/daemon_type select spicehtml5" >> /tmp/nova-seed.txt
+# echo "nova-consoleproxy nova-consoleproxy/daemon_type select spicehtml5" >> /tmp/nova-seed.txt
+echo "nova-consoleproxy nova-consoleproxy/daemon_type select $consoletype" >> /tmp/nova-seed.txt
 echo "nova-common nova/rabbit-host string 127.0.0.1" >> /tmp/nova-seed.txt
 echo "nova-api nova/register-endpoint boolean false" >> /tmp/nova-seed.txt
 echo "nova-common nova/my-ip string $novahost" >> /tmp/nova-seed.txt
@@ -200,6 +213,17 @@ fi
 echo "Listo"
 echo ""
 
+case $consoleflavor in
+"spice")
+	consoletype="spicehtml5"
+	consolesvc="nova-spicehtml5proxy"
+;;
+"vnc")
+	consoletype="novnc"
+	consolesvc="nova-novncproxy"
+;;
+esac
+
 /etc/init.d/nova-api stop
 /etc/init.d/nova-api stop
 /etc/init.d/nova-cert stop
@@ -212,14 +236,16 @@ echo ""
 /etc/init.d/nova-console stop
 /etc/init.d/nova-consoleauth stop
 /etc/init.d/nova-consoleauth stop
-/etc/init.d/nova-spicehtml5proxy stop
-/etc/init.d/nova-spicehtml5proxy stop
+/etc/init.d/$consolesvc stop
+/etc/init.d/$consolesvc stop
 /etc/init.d/nova-compute stop
 /etc/init.d/nova-compute stop
 /etc/init.d/nova-novncproxy stop
 /etc/init.d/nova-novncproxy stop
 /etc/init.d/nova-xenvncproxy stop
 /etc/init.d/nova-xenvncproxy stop
+
+echo "NOVA_CONSOLE_PROXY_TYPE=$consoletype" > /etc/default/nova-consoleproxy
 
 source $keystone_admin_rc_file
 
@@ -387,7 +413,7 @@ openstack-config --set /etc/nova/nova.conf DEFAULT linuxnet_ovs_integration_brid
 # openstack-config --set /etc/nova/nova.conf DEFAULT libvirt_ovs_bridge $integration_bridge
 openstack-config --set /etc/nova/nova.conf DEFAULT neutron_ovs_bridge $integration_bridge
 # openstack-config --set /etc/nova/nova.conf DEFAULT dhcp_options_enabled True
- 
+
 
 case $brokerflavor in
 "qpid")
@@ -423,25 +449,41 @@ sync
 sleep 5
 sync
 
-# Para la versión de DEBIAN, se usará SPICE - NoVNC-OpenStack parece estar BROKEN en Debian 7.
-#
-openstack-config --del /etc/nova/nova.conf novncproxy_host
-openstack-config --del /etc/nova/nova.conf vncserver_proxyclient_address
-openstack-config --del /etc/nova/nova.conf novncproxy_base_url
-openstack-config --del /etc/nova/nova.conf novncproxy_port
-openstack-config --del /etc/nova/nova.conf vncserver_listen
-openstack-config --del /etc/nova/nova.conf vnc_keymap
-
-openstack-config --set /etc/nova/nova.conf DEFAULT vnc_enabled False
-openstack-config --set /etc/nova/nova.conf DEFAULT novnc_enabled False
-
-openstack-config --set /etc/nova/nova.conf spice html5proxy_base_url "http://$spiceserver_controller_address:6082/spice_auto.html"
-openstack-config --set /etc/nova/nova.conf spice server_listen 0.0.0.0
-openstack-config --set /etc/nova/nova.conf spice server_proxyclient_address $novahost
-openstack-config --set /etc/nova/nova.conf spice enabled True
-openstack-config --set /etc/nova/nova.conf spice agent_enabled True
-openstack-config --set /etc/nova/nova.conf spice keymap en-us
-
+case $consoleflavor in
+"vnc")
+	openstack-config --set /etc/nova/nova.conf DEFAULT vnc_enabled True
+	openstack-config --set /etc/nova/nova.conf DEFAULT novncproxy_host 0.0.0.0
+	openstack-config --set /etc/nova/nova.conf DEFAULT vncserver_proxyclient_address $novahost
+	openstack-config --set /etc/nova/nova.conf DEFAULT novncproxy_base_url "http://$vncserver_controller_address:6080/vnc_auto.html"
+	openstack-config --set /etc/nova/nova.conf DEFAULT novncproxy_port 6080
+	openstack-config --set /etc/nova/nova.conf DEFAULT vncserver_listen $novahost
+	openstack-config --set /etc/nova/nova.conf DEFAULT vnc_keymap $vnc_keymap
+	openstack-config --del /etc/nova/nova.conf spice html5proxy_base_url
+	openstack-config --del /etc/nova/nova.conf spice server_listen
+	openstack-config --del /etc/nova/nova.conf spice server_proxyclient_address
+	openstack-config --del /etc/nova/nova.conf spice keymap
+	openstack-config --set /etc/nova/nova.conf spice agent_enabled False
+	openstack-config --set /etc/nova/nova.conf spice enabled False
+	;;
+"spice")
+	openstack-config --del /etc/nova/nova.conf DEFAULT novncproxy_host
+	openstack-config --del /etc/nova/nova.conf DEFAULT vncserver_proxyclient_address
+	openstack-config --del /etc/nova/nova.conf DEFAULT novncproxy_base_url
+	openstack-config --del /etc/nova/nova.conf DEFAULT novncproxy_port
+	openstack-config --del /etc/nova/nova.conf DEFAULT vncserver_listen
+	openstack-config --del /etc/nova/nova.conf DEFAULT vnc_keymap
+ 
+	openstack-config --set /etc/nova/nova.conf DEFAULT vnc_enabled False
+	openstack-config --set /etc/nova/nova.conf DEFAULT novnc_enabled False
+ 
+	openstack-config --set /etc/nova/nova.conf spice html5proxy_base_url "http://$spiceserver_controller_address:6082/spice_auto.html"
+	openstack-config --set /etc/nova/nova.conf spice server_listen 0.0.0.0
+	openstack-config --set /etc/nova/nova.conf spice server_proxyclient_address $novahost
+	openstack-config --set /etc/nova/nova.conf spice enabled True
+	openstack-config --set /etc/nova/nova.conf spice agent_enabled True
+	openstack-config --set /etc/nova/nova.conf spice keymap en-us
+	;;
+esac
 
 sed -r -i 's/NOVA_ENABLE\=false/NOVA_ENABLE\=true/' /etc/default/nova-common
 
@@ -579,6 +621,7 @@ then
 else
 	date > /etc/openstack-control-script-config/nova-installed
 	date > /etc/openstack-control-script-config/nova
+	echo "$consolesvc" > /etc/openstack-control-script-config/nova-console-svc
 	if [ $nova_in_compute_node = "no" ]
 	then
 		date > /etc/openstack-control-script-config/nova-full-installed

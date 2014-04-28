@@ -1,3 +1,14 @@
+1.0.3.deb7 - 28-Abril-2014
+- Se cambia el plugin de neutron a ML2.
+- Se cambian las imágenes de Cirros a V 0.3.2.
+- Se coloca la opción (controlable en la config
+  del instalador) de usar VNC o SPICE como consola
+  para las VM's.
+- Correcciones menores en módulo uninstall.sh.
+- Se coloca la opción (controlable en la config
+  del instalador) de cambiar el lease-time para
+  el agente DHCP de Neutron.
+
 1.0.2.deb7 - 23-Abril-2014
 - Cambios en módulo de base de datos para forzar
   la creación de las BD's en UTF8 cuando se usa

@@ -147,7 +147,7 @@ then
 	aptitude -y install neutron-common \
 		python-neutron \
 		python-neutronclient \
-		neutron-plugin-openvswitch \
+		neutron-plugin-ml2 \
 		neutron-plugin-openvswitch-agent
 else
 	echo "Instalando haproxy"
@@ -158,7 +158,7 @@ else
 		neutron-l3-agent neutron-lbaas-agent \
 		neutron-metadata-agent python-neutron \
 		python-neutronclient \
-		neutron-plugin-openvswitch \
+		neutron-plugin-ml2 \
 		neutron-plugin-openvswitch-agent
 
 
@@ -181,7 +181,11 @@ echo "Listo"
 echo ""
 echo "Preparando configuración inicial de Neutron"
 
-ln -s /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini /etc/neutron/plugin.ini
+# ln -s /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini /etc/neutron/plugin.ini
+# ML2
+ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini
+
+# echo "NEUTRON_PLUGIN_CONFIG=\"/etc/neutron/plugins/ml2/ml2_conf.ini\"" > /etc/default/neutron-server
 
 rm -f /tmp/neutron-seed.txt
 rm -f /tmp/cinder-seed.txt
@@ -272,11 +276,15 @@ openstack-config --set /etc/neutron/neutron.conf DEFAULT verbose False
 openstack-config --set /etc/neutron/neutron.conf DEFAULT log_dir /var/log/neutron
 openstack-config --set /etc/neutron/neutron.conf DEFAULT bind_host 0.0.0.0
 openstack-config --set /etc/neutron/neutron.conf DEFAULT bind_port 9696
-openstack-config --set /etc/neutron/neutron.conf DEFAULT core_plugin neutron.plugins.openvswitch.ovs_neutron_plugin.OVSNeutronPluginV2
+# openstack-config --set /etc/neutron/neutron.conf DEFAULT core_plugin neutron.plugins.openvswitch.ovs_neutron_plugin.OVSNeutronPluginV2
+# ML2
+# openstack-config --set /etc/neutron/neutron.conf DEFAULT core_plugin ml2
+# grrrr !!!. Hay que usar "neutron.plugins.ml2.plugin.Ml2Plugin" en lugar de "ml2" en DEBIAN !!.. DIOXXXX !!!
+openstack-config --set /etc/neutron/neutron.conf DEFAULT core_plugin neutron.plugins.ml2.plugin.Ml2Plugin
 openstack-config --set /etc/neutron/neutron.conf DEFAULT auth_strategy keystone
 openstack-config --set /etc/neutron/neutron.conf DEFAULT base_mac "$basemacspec"
 openstack-config --set /etc/neutron/neutron.conf DEFAULT mac_generation_retries 16
-openstack-config --set /etc/neutron/neutron.conf DEFAULT dhcp_lease_duration 120
+openstack-config --set /etc/neutron/neutron.conf DEFAULT dhcp_lease_duration $dhcp_lease_duration
 openstack-config --set /etc/neutron/neutron.conf DEFAULT allow_bulk True
 openstack-config --set /etc/neutron/neutron.conf DEFAULT allow_overlapping_ips False
 openstack-config --set /etc/neutron/neutron.conf DEFAULT control_exchange neutron
@@ -371,16 +379,19 @@ openstack-config --set /etc/neutron/neutron.conf DEFAULT api_workers 0
 # neutron.services.metering.metering_plugin.MeteringPlugin
 if [ $neutronmetering == "yes" ]
 then
-	thirdplugin=",neutron.services.metering.metering_plugin.MeteringPlugin"
+	# thirdplugin=",neutron.services.metering.metering_plugin.MeteringPlugin"
+	thirdplugin=",metering"
 else
 	thirdplugin=""
 fi
 
 if [ $vpnaasinstall == "yes" ]
 then
-	openstack-config --set /etc/neutron/neutron.conf DEFAULT service_plugins "neutron.services.loadbalancer.plugin.LoadBalancerPlugin,neutron.services.firewall.fwaas_plugin.FirewallPlugin,neutron.services.vpn.plugin.VPNDriverPlugin$thirdplugin"
+	# openstack-config --set /etc/neutron/neutron.conf DEFAULT service_plugins "neutron.services.loadbalancer.plugin.LoadBalancerPlugin,neutron.services.firewall.fwaas_plugin.FirewallPlugin,neutron.services.vpn.plugin.VPNDriverPlugin$thirdplugin"
+	openstack-config --set /etc/neutron/neutron.conf DEFAULT service_plugins "router,firewall,lbaas,vpnaas$thirdplugin"
 else
-	openstack-config --set /etc/neutron/neutron.conf DEFAULT service_plugins "neutron.services.loadbalancer.plugin.LoadBalancerPlugin,neutron.services.firewall.fwaas_plugin.FirewallPlugin$thirdplugin"
+	# openstack-config --set /etc/neutron/neutron.conf DEFAULT service_plugins "neutron.services.loadbalancer.plugin.LoadBalancerPlugin,neutron.services.firewall.fwaas_plugin.FirewallPlugin$thirdplugin"
+	openstack-config --set /etc/neutron/neutron.conf DEFAULT service_plugins "router,firewall,lbaas$thirdplugin"
 fi
 
 # NUEVO: Firewal As A Service
@@ -474,29 +485,59 @@ openstack-config --set /etc/neutron/neutron.conf database retry_interval 10
 openstack-config --set /etc/neutron/neutron.conf database idle_timeout 3600
 
 
-# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini database sql_idle_timeout 3600
-
-
-openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs integration_bridge $integration_bridge
-openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs bridge_mappings $bridge_mappings
-openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs enable_tunneling False
-openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs network_vlan_ranges $network_vlan_ranges
-openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs tenant_network_type vlan
-openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs vxlan_udp_port 4789
-openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini agent polling_interval 2
-openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini agent minimize_polling True
-openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini agent ovsdb_monitor_respawn_interval 30
-openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini securitygroup firewall_driver neutron.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver
-openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs local_ip $neutronhost
-openstack-config --del /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs tunnel_id_ranges
-
-
-
+#
+# ML2
+#
+openstack-config --set /etc/neutron/plugins/ml2/ml2_conf.ini ml2 type_drivers "local,flat"
+openstack-config --set /etc/neutron/plugins/ml2/ml2_conf.ini ml2 mechanism_drivers "openvswitch,l2population"
+openstack-config --set /etc/neutron/plugins/ml2/ml2_conf.ini ml2_type_flat flat_networks "*"
+openstack-config --set /etc/neutron/plugins/ml2/ml2_conf.ini securitygroup enable_security_group True
+openstack-config --set /etc/neutron/plugins/ml2/ml2_conf.ini securitygroup firewall_driver neutron.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver
+openstack-config --set /etc/neutron/plugins/ml2/ml2_conf.ini ovs enable_tunneling False
+openstack-config --set /etc/neutron/plugins/ml2/ml2_conf.ini ovs network_vlan_ranges $network_vlan_ranges
+openstack-config --set /etc/neutron/plugins/ml2/ml2_conf.ini ovs local_ip $neutronhost
+openstack-config --set /etc/neutron/plugins/ml2/ml2_conf.ini ovs bridge_mappings $bridge_mappings
+ 
+case $dbflavor in
+"mysql")
+	openstack-config --set /etc/neutron/plugins/ml2/ml2_conf.ini database connection mysql://$neutrondbuser:$neutrondbpass@$dbbackendhost:$mysqldbport/$neutrondbname
+;;
+"postgres")
+	openstack-config --set /etc/neutron/plugins/ml2/ml2_conf.ini database connection postgresql://$neutrondbuser:$neutrondbpass@$dbbackendhost:$psqldbport/$neutrondbname
+;;
+esac
+ 
+ 
 sync
 sleep 2
 sync
+ 
+ln -f -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini
 
-ln -f -s /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini /etc/neutron/plugin.ini
+#
+# FIN ML2
+#
+
+# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs integration_bridge $integration_bridge
+# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs bridge_mappings $bridge_mappings
+# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs enable_tunneling False
+# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs network_vlan_ranges $network_vlan_ranges
+# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs tenant_network_type vlan
+# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs vxlan_udp_port 4789
+# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini agent polling_interval 2
+# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini agent minimize_polling True
+# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini agent ovsdb_monitor_respawn_interval 30
+# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini securitygroup firewall_driver neutron.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver
+# openstack-config --set /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs local_ip $neutronhost
+# openstack-config --del /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini ovs tunnel_id_ranges
+
+# sync
+# sleep 2
+# sync
+
+# ln -f -s /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini /etc/neutron/plugin.ini
+#
+#
 
 openstack-config --set /etc/neutron/api-paste.ini filter:authtoken paste.filter_factory "keystoneclient.middleware.auth_token:filter_factory"
 openstack-config --set /etc/neutron/api-paste.ini filter:authtoken auth_protocol http
@@ -547,11 +588,11 @@ echo ""
 echo "Listo"
 echo ""
 
-echo ""
-echo "Aprovisionando Base de Datos de Neutron"
-echo ""
+# echo ""
+# echo "Aprovisionando Base de Datos de Neutron"
+# echo ""
 #
-su neutron -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head"
+# su neutron -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head"
  
 sync
 sleep 2
@@ -695,12 +736,5 @@ fi
 echo ""
 echo "Servicio Neutron Configurado y operativo"
 echo ""
-
-
-
-
-
-
-
 
 

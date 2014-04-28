@@ -112,7 +112,7 @@ aptitude -y purge virt-top ceilometer-agent-central ceilometer-agent-compute cei
 	qpid-tools qpid-doc qemu kvm qemu-kvm libvirt-bin libvirt-doc rabbitmq-server \
 	heat-api heat-api-cfn heat-engine
 
-aptitude -y purge python-openstack.nose-plugin  python-oslo.sphinx python-oslosphinx
+aptitude -y purge python-openstack.nose-plugin python-oslo.sphinx python-oslosphinx neutron-metering-agent
 
 apt-get -y autoremove
 
