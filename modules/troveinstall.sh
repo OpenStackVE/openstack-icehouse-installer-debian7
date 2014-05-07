@@ -5,7 +5,7 @@
 # E-Mail: TigerLinux@Gmail.com
 # Abril del 2014
 #
-# Script de instalacion y preparacion de Heat
+# Script de instalacion y preparacion de Trove
 #
 
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -50,7 +50,7 @@ else
 	exit 0
 fi
 
-if [ -f /etc/openstack-control-script-config/heat-installed ]
+if [ -f /etc/openstack-control-script-config/trove-installed ]
 then
 	echo ""
 	echo "Este módulo ya fue ejecutado de manera exitosa - saliendo"
@@ -81,7 +81,7 @@ echo "glance-common glance/admin-tenant-name string $keystoneadmintenant" >> /tm
 echo "glance-api glance/endpoint-ip string $glancehost" >> /tmp/glance-seed.txt
 echo "glance-api glance/region-name string $endpointsregion" >> /tmp/glance-seed.txt
 echo "glance-api glance/register-endpoint boolean false" >> /tmp/glance-seed.txt
-echo "glance-common glance/admin-user	string $keystoneadminuser" >> /tmp/glance-seed.txt
+echo "glance-common glance/admin-user   string $keystoneadminuser" >> /tmp/glance-seed.txt
 echo "glance-common glance/configure_db boolean false" >> /tmp/glance-seed.txt
 echo "glance-common glance/rabbit_host string $messagebrokerhost" >> /tmp/glance-seed.txt
 echo "glance-common glance/rabbit_password password $brokerpass" >> /tmp/glance-seed.txt
@@ -182,149 +182,185 @@ echo "heat-common heat/register-endpoint boolean false" >> /tmp/heat-seed.txt
 
 debconf-set-selections /tmp/heat-seed.txt
 
-echo ""
-echo "Instalando paquetes para Heat"
+echo "trove-common trove/configure_db boolean false" >> /tmp/trove-seed.txt
+echo "trove-common trove/admin-tenant-name string $troveuser" >> /tmp/trove-seed.txt
+echo "trove-common trove/admin-user string admin" >> /tmp/trove-seed.txt
+echo "trove-common trove/auth-host string $keystonehost" >> /tmp/trove-seed.txt
+echo "trove-api trove/register-endpoint boolean false" >> /tmp/trove-seed.txt
+echo "trove-common trove/admin-password password $trovepass" >> /tmp/trove-seed.txt
 
-aptitude -y install heat-api heat-api-cfn heat-engine
-aptitude -y install heat-cfntools
+debconf-set-selections /tmp/trove-seed.txt
+
+
+echo ""
+echo "Instalando paquetes para Trove"
+
+aptitude -y install python-trove python-troveclient python-glanceclient \
+	trove-common trove-api trove-taskmanager
 
 echo "Listo"
 echo ""
 
 rm -f /tmp/*.seed.txt
 
+/etc/init.d/trove-taskmanager stop
+/etc/init.d/trove-taskmanager stop
+/etc/init.d/trove-api stop
+/etc/init.d/trove-api stop
+
+rm -f /var/lib/trove/trovedb
+
+cat ./libs/openstack-config > /usr/bin/openstack-config
+
 source $keystone_admin_rc_file
 
 echo ""
-echo "Configurando Heat"
+echo "Configurando Trove"
 echo ""
 
-/etc/init.d/heat-api stop
-/etc/init.d/heat-api-cfn stop
-/etc/init.d/heat-engine stop
+commonfile="/etc/trove/trove.conf
+	/etc/trove/trove-taskmanager.conf
+"
 
-mkdir -p /etc/heat/environment.d
+for myconffile in $commonfile
+do
+	# Failsafe por si el archivo no está !!!
+	echo "#" >> $myconffile
 
-# Temporal - aparentemente el paquete no instala el api-paste.ini
+	case $dbflavor in
+	"mysql")
+		# openstack-config --set $myconffile database connection mysql://$trovedbuser:$trovedbpass@$dbbackendhost:$mysqldbport/$trovedbname
+		openstack-config --set $myconffile DEFAULT sql_connection mysql://$trovedbuser:$trovedbpass@$dbbackendhost:$mysqldbport/$trovedbname
+		;;
+	"postgres")
+		# openstack-config --set $myconffile database connection postgresql://$trovedbuser:$trovedbpass@$dbbackendhost:$psqldbport/$trovedbname
+		openstack-config --set $myconffile DEFAULT sql_connection postgresql://$trovedbuser:$trovedbpass@$dbbackendhost:$psqldbport/$trovedbname
+		;;
+	esac
 
-cat ./libs/heat/api-paste.ini > /etc/heat/api-paste.ini
+	openstack-config --set $myconffile DEFAULT log_dir /var/log/trove
+	openstack-config --set $myconffile DEFAULT verbose False
+	openstack-config --set $myconffile DEFAULT debug False
+	openstack-config --set $myconffile DEFAULT control_exchange trove
+	openstack-config --set $myconffile DEFAULT trove_auth_url http://$keystonehost:5000/v2.0
+	openstack-config --set $myconffile DEFAULT nova_compute_url http://$novahost:8774/v2
+	openstack-config --set $myconffile DEFAULT cinder_url http://$cinderhost:8776/v1
+	openstack-config --set $myconffile DEFAULT swift_url http://$swifthost:8080/v1/AUTH_
+	openstack-config --set $myconffile DEFAULT notifier_queue_hostname $messagebrokerhost
 
-chown -R heat.heat /etc/heat
+	case $brokerflavor in
+	"qpid")
+        	openstack-config --set $myconffile DEFAULT rpc_backend trove.openstack.common.rpc.impl_qpid
+        	# openstack-config --set $myconffile DEFAULT rpc_backend qpid
+	        openstack-config --set $myconffile DEFAULT qpid_reconnect_interval_min 0
+	        openstack-config --set $myconffile DEFAULT qpid_username $brokeruser
+	        openstack-config --set $myconffile DEFAULT qpid_tcp_nodelay True
+	        openstack-config --set $myconffile DEFAULT qpid_protocol tcp
+	        openstack-config --set $myconffile DEFAULT qpid_hostname $messagebrokerhost
+	        openstack-config --set $myconffile DEFAULT qpid_password $brokerpass
+	        openstack-config --set $myconffile DEFAULT qpid_port 5672
+	        openstack-config --set $myconffile DEFAULT qpid_topology_version 1
+        	;;
 
-# if [ -f /etc/heat/api-paste.ini ]
-#then
-#	openstack-config --set /etc/heat/api-paste.ini "filter:authtoken" paste.filter_factory "heat.common.auth_token:filter_factory"
-#	openstack-config --set /etc/heat/api-paste.ini "filter:authtoken" auth_host $keystonehost
-#	openstack-config --set /etc/heat/api-paste.ini "filter:authtoken" auth_port 35357
-#	openstack-config --set /etc/heat/api-paste.ini "filter:authtoken" auth_protocol http
-#	openstack-config --set /etc/heat/api-paste.ini "filter:authtoken" admin_tenant_name $keystoneservicestenant
-#	openstack-config --set /etc/heat/api-paste.ini "filter:authtoken" admin_user $heatuser
-#	openstack-config --set /etc/heat/api-paste.ini "filter:authtoken" admin_password $heatpass
-#fi
+	"rabbitmq")
+	        openstack-config --set $myconffile DEFAULT rpc_backend trove.openstack.common.rpc.impl_kombu
+	        # openstack-config --set $myconffile DEFAULT rpc_backend rabbit
+        	openstack-config --set $myconffile DEFAULT rabbit_host $messagebrokerhost
+	        openstack-config --set $myconffile DEFAULT rabbit_userid $brokeruser
+	        openstack-config --set $myconffile DEFAULT rabbit_password $brokerpass
+	        openstack-config --set $myconffile DEFAULT rabbit_port 5672
+	        openstack-config --set $myconffile DEFAULT rabbit_use_ssl false
+	        openstack-config --set $myconffile DEFAULT rabbit_virtual_host $brokervhost
+		openstack-config --set $myconffile DEFAULT notifier_queue_userid $brokeruser
+		openstack-config --set $myconffile DEFAULT notifier_queue_password $brokerpass
+		openstack-config --set $myconffile DEFAULT notifier_queue_ssl false
+		openstack-config --set $myconffile DEFAULT notifier_queue_port 5672
+		openstack-config --set $myconffile DEFAULT notifier_queue_virtual_host $brokervhost
+		openstack-config --set $myconffile DEFAULT notifier_queue_transport memory
+        	;;
+	esac
 
-# echo "# Heat Main Config" > /etc/heat/heat.conf
+done
 
-case $dbflavor in
-"mysql")
-	openstack-config --set /etc/heat/heat.conf database connection mysql://$heatdbuser:$heatdbpass@$dbbackendhost:$mysqldbport/$heatdbname
-;;
-"postgres")
-	openstack-config --set /etc/heat/heat.conf database connection postgresql://$heatdbuser:$heatdbpass@$dbbackendhost:$psqldbport/$heatdbname
-;;
-esac
- 
-openstack-config --set /etc/heat/heat.conf DEFAULT host $heathost
-openstack-config --set /etc/heat/heat.conf DEFAULT debug false
-openstack-config --set /etc/heat/heat.conf DEFAULT verbose false
-openstack-config --set /etc/heat/heat.conf DEFAULT log_dir /var/log/heat
- 
-# Nuevo para Icehouse
-openstack-config --set /etc/heat/heat.conf DEFAULT heat_metadata_server_url http://$heathost:8000
-openstack-config --set /etc/heat/heat.conf DEFAULT heat_waitcondition_server_url http://$heathost:8000/v1/waitcondition
-openstack-config --set /etc/heat/heat.conf DEFAULT heat_watch_server_url http://$heathost:8003
-openstack-config --set /etc/heat/heat.conf DEFAULT heat_stack_user_role heat_stack_user
-openstack-config --set /etc/heat/heat.conf DEFAULT auth_encryption_key $heatencriptionkey
-openstack-config --set /etc/heat/heat.conf DEFAULT use_syslog False
-openstack-config --set /etc/heat/heat.conf DEFAULT heat_api_cloudwatch bind_host 0.0.0.0
-openstack-config --set /etc/heat/heat.conf DEFAULT heat_api_cloudwatch bind_port 8003
+openstack-config --set /etc/trove/trove-taskmanager.conf DEFAULT nova_proxy_admin_user $keystoneadminuser
+openstack-config --set /etc/trove/trove-taskmanager.conf DEFAULT nova_proxy_admin_pass $keystoneadminpass
+openstack-config --set /etc/trove/trove-taskmanager.conf DEFAULT nova_proxy_admin_tenant_name $keystoneadmintenant
 
-openstack-config --del /etc/heat/heat.conf keystone_authtoken admin_tenant_name
-openstack-config --del /etc/heat/heat.conf keystone_authtoken admin_user
-openstack-config --del /etc/heat/heat.conf keystone_authtoken admin_password
-openstack-config --del /etc/heat/heat.conf keystone_authtoken auth_host
-openstack-config --del /etc/heat/heat.conf keystone_authtoken auth_port
-openstack-config --del /etc/heat/heat.conf keystone_authtoken auth_protocol
-openstack-config --del /etc/heat/heat.conf keystone_authtoken auth_uri
-openstack-config --del /etc/heat/heat.conf keystone_authtoken signing_dir
+# openstack-config --set /etc/trove/trove-conductor.conf DEFAULT nova_proxy_admin_user $keystoneadminuser
+# openstack-config --set /etc/trove/trove-conductor.conf DEFAULT nova_proxy_admin_pass $keystoneadminpass
+# openstack-config --set /etc/trove/trove-conductor.conf DEFAULT nova_proxy_admin_tenant_name $keystoneadmintenant
 
-openstack-config --del /etc/heat/heat.conf keystone_authtoken admin_tenant_name
-openstack-config --del /etc/heat/heat.conf keystone_authtoken admin_user
-openstack-config --del /etc/heat/heat.conf keystone_authtoken admin_password
-openstack-config --del /etc/heat/heat.conf keystone_authtoken auth_host
-openstack-config --del /etc/heat/heat.conf keystone_authtoken auth_port
-openstack-config --del /etc/heat/heat.conf keystone_authtoken auth_protocol
-openstack-config --del /etc/heat/heat.conf keystone_authtoken auth_uri
-openstack-config --del /etc/heat/heat.conf keystone_authtoken signing_dir
+openstack-config --set /etc/trove/trove.conf DEFAULT default_datastore mysql
+openstack-config --set /etc/trove/trove.conf DEFAULT add_addresses True
+openstack-config --set /etc/trove/trove.conf DEFAULT network_label_regex "^NETWORK_LABEL$"
+openstack-config --set /etc/trove/trove.conf DEFAULT api_paste_config /etc/trove/api-paste.ini
+openstack-config --set /etc/trove/trove.conf DEFAULT bind_host 0.0.0.0
+openstack-config --set /etc/trove/trove.conf DEFAULT bind_port 8779
 
-openstack-config --set /etc/heat/heat.conf keystone_authtoken admin_tenant_name $keystoneservicestenant
-openstack-config --set /etc/heat/heat.conf keystone_authtoken admin_user $heatuser
-openstack-config --set /etc/heat/heat.conf keystone_authtoken admin_password $heatpass
-openstack-config --set /etc/heat/heat.conf keystone_authtoken auth_host $keystonehost
-openstack-config --set /etc/heat/heat.conf keystone_authtoken auth_port 35357
-openstack-config --set /etc/heat/heat.conf keystone_authtoken auth_protocol http
-openstack-config --set /etc/heat/heat.conf keystone_authtoken auth_uri http://$keystonehost:5000/v2.0/
-openstack-config --set /etc/heat/heat.conf keystone_authtoken signing_dir /tmp/keystone-signing-heat
+troveworkers=`grep processor.\*: /proc/cpuinfo |wc -l`
 
-openstack-config --set /etc/heat/heat.conf ec2authtoken auth_uri http://$keystonehost:5000/v2.0/
- 
-openstack-config --set /etc/heat/heat.conf DEFAULT control_exchange openstack
- 
-case $brokerflavor in
-"qpid")
-	openstack-config --set /etc/heat/heat.conf DEFAULT rpc_backend heat.openstack.common.rpc.impl_qpid
-	openstack-config --set /etc/heat/heat.conf DEFAULT qpid_reconnect_interval_min 0
-	openstack-config --set /etc/heat/heat.conf DEFAULT qpid_username $brokeruser
-	openstack-config --set /etc/heat/heat.conf DEFAULT qpid_tcp_nodelay True
-	openstack-config --set /etc/heat/heat.conf DEFAULT qpid_protocol tcp
-	openstack-config --set /etc/heat/heat.conf DEFAULT qpid_hostname $messagebrokerhost
-	openstack-config --set /etc/heat/heat.conf DEFAULT qpid_password $brokerpass
-	openstack-config --set /etc/heat/heat.conf DEFAULT qpid_port 5672
-	openstack-config --set /etc/heat/heat.conf DEFAULT qpid_topology_version 1
-	;;
- 
-"rabbitmq")
-	openstack-config --set /etc/heat/heat.conf DEFAULT rpc_backend heat.openstack.common.rpc.impl_kombu
-	openstack-config --set /etc/heat/heat.conf DEFAULT rabbit_host $messagebrokerhost
-	openstack-config --set /etc/heat/heat.conf DEFAULT rabbit_userid $brokeruser
-	openstack-config --set /etc/heat/heat.conf DEFAULT rabbit_password $brokerpass
-	openstack-config --set /etc/heat/heat.conf DEFAULT rabbit_port 5672
-	openstack-config --set /etc/heat/heat.conf DEFAULT rabbit_use_ssl false
-	openstack-config --set /etc/heat/heat.conf DEFAULT rabbit_virtual_host $brokervhost
-	;;
-esac
+openstack-config --set /etc/trove/trove.conf DEFAULT trove_api_workers $troveworkers
+
+# openstack-config --set /etc/trove/api-paste.ini filter:authtoken admin_tenant_name $keystoneservicestenant
+openstack-config --set /etc/trove/api-paste.ini filter:authtoken admin_tenant_name $troveuser
+openstack-config --set /etc/trove/api-paste.ini filter:authtoken admin_user $troveuser
+openstack-config --set /etc/trove/api-paste.ini filter:authtoken admin_password $trovepass
+openstack-config --set /etc/trove/api-paste.ini filter:authtoken auth_host $keystonehost
+openstack-config --set /etc/trove/api-paste.ini filter:authtoken auth_port 35357
+openstack-config --set /etc/trove/api-paste.ini filter:authtoken auth_protocol http
+openstack-config --set /etc/trove/api-paste.ini filter:authtoken auth_uri http://$keystonehost:5000/v2.0/
+openstack-config --set /etc/trove/api-paste.ini filter:authtoken signing_dir /var/cache/trove
+
+openstack-config --set /etc/trove/api-paste.ini DEFAULT trove_api_workers $troveworkers
+
+# openstack-config --set /etc/trove/trove.conf keystone_authtoken admin_tenant_name $keystoneservicestenant
+openstack-config --set /etc/trove/trove.conf keystone_authtoken admin_tenant_name $troveuser
+openstack-config --set /etc/trove/trove.conf keystone_authtoken admin_user $troveuser
+openstack-config --set /etc/trove/trove.conf keystone_authtoken admin_password $trovepass
+openstack-config --set /etc/trove/trove.conf keystone_authtoken auth_host $keystonehost
+openstack-config --set /etc/trove/trove.conf keystone_authtoken auth_port 35357
+openstack-config --set /etc/trove/trove.conf keystone_authtoken auth_protocol http
+openstack-config --set /etc/trove/trove.conf keystone_authtoken auth_uri http://$keystonehost:5000/v2.0/
+openstack-config --set /etc/trove/trove.conf keystone_authtoken signing_dir /var/cache/trove
+
+
+mkdir -p /var/cache/trove
+chown -R trove.trove /var/cache/trove
+chown trove.trove /etc/trove/*
+chmod 700 /var/cache/trove
+
+touch /var/log/trove/trove-manage.log
+chown trove.trove /var/log/trove/*
 
 echo ""
-echo "Heat Configurado"
+echo "Trove Configurado"
 echo ""
 
 #
 # Se aprovisiona la base de datos
 echo ""
-echo "Aprovisionando/inicializando BD de HEAT"
+echo "Aprovisionando/inicializando BD de TROVE"
 echo ""
-chown -R heat.heat /var/log/heat /etc/heat
-# su - heat -c "heat-manage db_sync"
-heat-manage db_sync
-chown -R heat.heat /var/log/heat /etc/heat
+
+su -s /bin/sh -c "trove-manage db_sync" trove
+
+#
+# Y se crea el datastore de MySQL
+echo ""
+echo "Creando datastore de TROVE en MySQL"
+echo ""
+
+su -s /bin/sh -c "trove-manage datastore_update mysql ''" trove
 
 echo ""
 echo "Listo"
 echo ""
 
+
 echo ""
 echo "Aplicando reglas de IPTABLES"
 
-iptables -A INPUT -p tcp -m multiport --dports 8000,8004 -j ACCEPT
+iptables -A INPUT -p tcp -m multiport --dports 8779 -j ACCEPT
 /etc/init.d/iptables-persistent save
 
 echo "Listo"
@@ -333,29 +369,24 @@ echo ""
 echo "Activando Servicios"
 echo ""
 
-/etc/init.d/heat-api restart
-/etc/init.d/heat-api-cfn restart
-/etc/init.d/heat-engine restart
-chkconfig heat-api on
-chkconfig heat-api-cfn on
-chkconfig heat-engine on
+/etc/init.d/trove-api restart
+/etc/init.d/trove-taskmanager restart
+chkconfig trove-api on
+chkconfig trove-taskmanager on
 
-testheat=`dpkg -l heat-api 2>/dev/null|tail -n 1|grep -ci ^ii`
-if [ $testheat == "0" ]
+testtrove=`dpkg -l trove-api 2>/dev/null|tail -n 1|grep -ci ^ii`
+if [ $testtrove == "0" ]
 then
-	echo ""
-	echo "Falló la instalación de heat - abortando el resto de la instalación"
-	echo ""
-	exit 0
+        echo ""
+        echo "Falló la instalación de trove - abortando el resto de la instalación"
+        echo ""
+        exit 0
 else
-	date > /etc/openstack-control-script-config/heat-installed
-	date > /etc/openstack-control-script-config/heat
+        date > /etc/openstack-control-script-config/trove-installed
+        date > /etc/openstack-control-script-config/trove
 fi
 
-
 echo ""
-echo "Heat Instalado"
+echo "Trove Instalado"
 echo ""
-
-
 

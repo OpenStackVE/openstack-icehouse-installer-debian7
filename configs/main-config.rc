@@ -10,8 +10,8 @@
 # Primera versión para Icehouse (debian: Abril 19 del 2014
 #
 # Archivo de configuracion principal
-# Para el instalador versión 1.0.3.deb7 "Snow Lynx"
-# Abril 28, 2014
+# Para el instalador versión 1.1.0.deb7 "Snow Lynx"
+# Mayo 07, 2014
 #
 
 #
@@ -21,7 +21,7 @@
 # Hasta ahora sólo se soporta mysql y postgres
 #
 # dbflavor = mysql | postgres
-dbflavor="postgres"
+dbflavor="mysql"
 
 # La siguiente variable le indica al instalador si se creará la base de datos.
 # Si la respuesta es "yes", se debe suministrar el usuario root y su password
@@ -113,6 +113,11 @@ horizondbpass="P@ssw0rd"
 heatdbname="heatdb"
 heatdbuser="heatdbuser"
 heatdbpass="P@ssw0rd"
+# Trove
+trovedbname="trovedb"
+trovedbuser="trovedbuser"
+trovedbpass="P@ssw0rd"
+
 
 # En la siguiente seccion se definen los datos de keystone
 # Si se requiere instalar keystone, dejar keystoneinstall="yes",
@@ -439,6 +444,24 @@ heatencriptionkey="e0dd8525f037e1b8cb6e"
 # es MySQL
 extraheathosts=""
 
+
+# Datos de configuración para trove
+# Por defecto va en "no" a menos que lo vaya a
+# usar realmente
+# ALERTA !!
+# Todavía esto hay que considerarlo EXPERIMENTAL
+#
+troveinstall="no"
+trovehost="192.168.50.11"
+troveuser="trove"
+trovesvce="trove"
+trovepass="P@ssw0rd"
+troveemail="trove@localhost"
+# Solo para la base de datos:
+# Si se van a tener varios hosts de trove, colocar aquí las IP's
+# para el acceso de la base de datos - sólo efectivo cuando el backend
+# es MySQL
+extratrovehosts=""
 
 
 # Instalacion de infraestructura de monitoreo
