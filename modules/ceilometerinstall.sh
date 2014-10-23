@@ -237,6 +237,8 @@ sed -r -i 's/http_control_exchanges\ =\ nova/http_control_exchanges=nova\nhttp_c
 openstack-config --set /etc/ceilometer/ceilometer.conf publisher_rpc metering_topic metering
 openstack-config --set /etc/ceilometer/ceilometer.conf rpc_notifier2 topics notifications
 
+usermod -G libvirt,nova ceilometer
+
 #
 # Esto no sabemos si todavía funciona - esperando por confirmación
 # grep -v format_string /etc/nova/nova.conf > /etc/ceilometer-collector.conf
