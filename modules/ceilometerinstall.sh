@@ -156,7 +156,12 @@ openstack-config --set /etc/ceilometer/ceilometer.conf DEFAULT metering_api_port
 openstack-config --set /etc/ceilometer/ceilometer.conf DEFAULT auth_strategy keystone
 openstack-config --set /etc/ceilometer/ceilometer.conf DEFAULT logdir /var/log/ceilometer
 openstack-config --set /etc/ceilometer/ceilometer.conf DEFAULT os_auth_region $endpointsregion
-openstack-config --set /etc/ceilometer/ceilometer.conf DEFAULT host $ceilometerhost
+# openstack-config --set /etc/ceilometer/ceilometer.conf DEFAULT host $ceilometerhost
+openstack-config --set /etc/ceilometer/ceilometer.conf DEFAULT host `hostname`
+openstack-config --set /etc/ceilometer/ceilometer.conf DEFAULT pipeline_cfg_file pipeline.yaml
+openstack-config --set /etc/ceilometer/ceilometer.conf DEFAULT collector_workers 2
+openstack-config --set /etc/ceilometer/ceilometer.conf DEFAULT notification_workers 2
+openstack-config --set /etc/ceilometer/ceilometer.conf DEFAULT hypervisor_inspector libvirt
  
 openstack-config --del /etc/ceilometer/ceilometer.conf DEFAULT sql_connection
  

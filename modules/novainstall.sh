@@ -328,6 +328,7 @@ openstack-config --set /etc/nova/nova.conf DEFAULT iscsi_helper tgtadm
 openstack-config --set /etc/nova/nova.conf DEFAULT vif_plugging_timeout 10
 openstack-config --set /etc/nova/nova.conf DEFAULT vif_plugging_is_fatal False
 openstack-config --set /etc/nova/nova.conf DEFAULT control_exchange nova
+openstack-config --set /etc/nova/nova.conf DEFAULT host `hostname`
 
 #
 # Base de datos
@@ -368,7 +369,7 @@ openstack-config --set /etc/nova/nova.conf DEFAULT libvirt_vif_driver nova.virt.
 openstack-config --set /etc/nova/nova.conf DEFAULT neutron_region_name $endpointsregion
 openstack-config --set /etc/nova/nova.conf DEFAULT network_api_class nova.network.neutronv2.api.API
 openstack-config --set /etc/nova/nova.conf DEFAULT debug False
-openstack-config --set /etc/nova/nova.conf DEFAULT my_ip $novahost
+openstack-config --set /etc/nova/nova.conf DEFAULT my_ip $nova_computehost
 openstack-config --set /etc/nova/nova.conf DEFAULT neutron_auth_strategy keystone
 openstack-config --set /etc/nova/nova.conf DEFAULT neutron_admin_password $neutronpass
 openstack-config --set /etc/nova/nova.conf DEFAULT api_paste_config /etc/nova/api-paste.ini
