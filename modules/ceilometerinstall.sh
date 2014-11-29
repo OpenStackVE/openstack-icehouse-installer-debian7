@@ -62,15 +62,16 @@ echo ""
 echo "Instalando paquetes para Ceilometer"
 echo ""
 
-echo "Instalando y configurando backend de base de datos MongoDB"
-echo ""
-aptitude -y install mongodb mongodb-clients mongodb-dev mongodb-server
-aptitude -y install libsnappy1 libgoogle-perftools4
-# dpkg -i libs/mongodb/*.deb
+if [ $ceilometer_in_compute_node = "no" ]
+then
+	echo "Instalando y configurando backend de base de datos MongoDB"
+	echo ""
+	aptitude -y install mongodb mongodb-clients mongodb-dev mongodb-server
+	aptitude -y install libsnappy1 libgoogle-perftools4
 
-/etc/init.d/mongodb restart
-chkconfig mongodb on
-
+	/etc/init.d/mongodb restart
+	chkconfig mongodb on
+fi
 
 echo "ceilometer-api ceilometer/register-endpoint boolean false" > /tmp/ceilometer-seed.txt
 echo "ceilometer-api ceilometer/region-name string $endpointsregion" >> /tmp/ceilometer-seed.txt
@@ -90,14 +91,31 @@ echo ""
 echo "Instalando paquetes de Ceilometer"
 echo ""
 
-aptitude -y install ceilometer-agent-central ceilometer-agent-compute ceilometer-api \
-	ceilometer-collector ceilometer-common python-ceilometer python-ceilometerclient \
-	libnspr4 libnspr4-dev python-libxslt1
-
-if [ $ceilometeralarms == "yes" ]
+if [ $ceilometer_in_compute_node == "no" ]
 then
-	aptitude -y install ceilometer-alarm-evaluator ceilometer-alarm-notifier ceilometer-agent-notification
+	echo ""
+	echo "Paquetes para Controller o ALL-IN-ONE"
+	echo ""
+ 
+	aptitude -y install ceilometer-agent-central ceilometer-agent-compute ceilometer-api \
+		ceilometer-collector ceilometer-common python-ceilometer python-ceilometerclient \
+		libnspr4 libnspr4-dev python-libxslt1
+ 
+	if [ $ceilometeralarms == "yes" ]
+	then
+		aptitude -y install ceilometer-alarm-evaluator ceilometer-alarm-notifier \
+		ceilometer-agent-notification
+	fi
+else
+	aptitude -y install ceilometer-agent-compute libnspr4 libnspr4-dev python-libxslt1
 fi
+ 
+if [ $ceilometer_in_compute_node = "no" ]
+then
+	sed -i "s/127.0.0.1/$mondbhost/g" /etc/mongodb.conf
+	/etc/init.d/mongodb restart
+fi
+
 
 #
 # Downgrade de WSME para que funcione
@@ -111,16 +129,21 @@ fi
 echo "Listo"
 echo ""
 
-/etc/init.d/ceilometer-agent-central stop
-/etc/init.d/ceilometer-agent-compute stop
-/etc/init.d/ceilometer-api stop
-/etc/init.d/ceilometer-collector stop
-
-if [ $ceilometeralarms == "yes" ]
+if [ $ceilometer_in_compute_node == "no" ]
 then
-	/etc/init.d/ceilometer-alarm-evaluator stop
-	/etc/init.d/ceilometer-alarm-notifier stop
-	/etc/init.d/ceilometer-agent-notification stop
+	/etc/init.d/ceilometer-agent-central stop
+	/etc/init.d/ceilometer-agent-compute stop
+	/etc/init.d/ceilometer-api stop
+	/etc/init.d/ceilometer-collector stop
+ 
+	if [ $ceilometeralarms == "yes" ]
+	then
+		/etc/init.d/ceilometer-alarm-evaluator stop
+		/etc/init.d/ceilometer-alarm-notifier stop
+		/etc/init.d/ceilometer-agent-notification stop
+	fi
+else
+	/etc/init.d/ceilometer-agent-compute stop
 fi
 
 source $keystone_admin_rc_file
@@ -253,41 +276,53 @@ iptables -A INPUT -p tcp -m multiport --dports 8777,$mondbport -j ACCEPT
 
 echo "Listo"
 
-/etc/init.d/mongodb stop
-
-sync
-sleep 5
-sync
-
-/etc/init.d/mongodb start
-
-sync
-sleep 5
-sync
-chkconfig mongodb on
-
-/etc/init.d/ceilometer-agent-compute start
-chkconfig ceilometer-agent-compute on
-
-/etc/init.d/ceilometer-agent-central start
-chkconfig ceilometer-agent-central on
-
-/etc/init.d/ceilometer-api start
-chkconfig ceilometer-api on
-
-/etc/init.d/ceilometer-collector start
-chkconfig ceilometer-collector on
-
-if [ $ceilometeralarms == "yes" ]
+if [ $ceilometer_in_compute_node == "no" ]
 then
-	/etc/init.d/ceilometer-alarm-notifier start
-	chkconfig ceilometer-alarm-notifier on
-
-	/etc/init.d/ceilometer-alarm-evaluator start
-	chkconfig ceilometer-alarm-evaluator on
-
-	/etc/init.d/ceilometer-agent-notification start
-	chkconfig ceilometer-agent-notification on
+ 
+	/etc/init.d/mongodb stop
+	sync
+	sleep 5
+	sync
+	/etc/init.d/mongodb start
+	sync
+	sleep 5
+	sync
+	chkconfig mongodb on
+ 
+	if [ $ceilometer_without_compute == "no" ]
+	then
+		/etc/init.d/ceilometer-agent-compute start
+		chkconfig ceilometer-agent-compute on
+	else
+		/etc/init.d/ceilometer-agent-compute stop
+		chkconfig ceilometer-agent-compute off
+	fi
+ 
+	/etc/init.d/ceilometer-agent-central start
+	chkconfig ceilometer-agent-central on
+ 
+	/etc/init.d/ceilometer-api start
+	chkconfig ceilometer-api on
+ 
+	/etc/init.d/ceilometer-collector start
+	chkconfig ceilometer-collector on
+ 
+	if [ $ceilometeralarms == "yes" ]
+	then
+		/etc/init.d/ceilometer-alarm-notifier start
+		chkconfig ceilometer-alarm-notifier on
+ 
+		/etc/init.d/ceilometer-alarm-evaluator start
+		chkconfig ceilometer-alarm-evaluator on
+ 
+		/etc/init.d/ceilometer-agent-notification start
+		chkconfig ceilometer-agent-notification on
+	fi
+ 
+else
+	/etc/init.d/ceilometer-agent-compute start
+	chkconfig ceilometer-agent-compute on
+	/etc/init.d/ceilometer-agent-compute restart
 fi
 
 testceilometer=`dpkg -l ceilometer-api 2>/dev/null|tail -n 1|grep -ci ^ii`
@@ -303,6 +338,17 @@ else
 	if [ $ceilometeralarms == "yes" ]
 	then
 		date > /etc/openstack-control-script-config/ceilometer-installed-alarms
+	fi
+	if [ $ceilometer_in_compute_node == "no" ]
+	then
+		date > /etc/openstack-control-script-config/ceilometer-full-installed
+	fi
+	if [ $ceilometer_without_compute == "yes" ]
+	then
+		if [ $ceilometer_in_compute_node == "no" ]
+		then
+			date > /etc/openstack-control-script-config/ceilometer-without-compute
+		fi
 	fi
 fi
 

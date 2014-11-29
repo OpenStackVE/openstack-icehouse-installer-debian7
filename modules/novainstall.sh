@@ -183,9 +183,11 @@ kvm_possible=`grep -E 'svm|vmx' /proc/cpuinfo|uniq|wc -l`
 
 if [ $kvm_possible == "0" ]
 then
-	nova_kvm_or_qemu="nova-compute-qemu"
+	# nova_kvm_or_qemu="nova-compute-qemu"
+	nova_kvm_or_qemu="nova-compute"
 else
-	nova_kvm_or_qemu="nova-compute-kvm"
+	# nova_kvm_or_qemu="nova-compute-kvm"
+	nova_kvm_or_qemu="nova-compute"
 fi
 
 if [ $nova_in_compute_node = "no" ]

@@ -109,7 +109,7 @@ aptitude -y purge virt-top ceilometer-agent-central ceilometer-agent-compute cei
 	python-keystone python-keystoneclient python-psycopg2 python-sqlalchemy python-sqlalchemy-ext \
 	python-psycopg2 python-mysqldb dnsmasq dnsmasq-utils qpidd libqpidbroker2 libqpidclient2 \
 	libqpidcommon2 libqpidtypes1 python-cqpid python-qpid python-qpid-extras-qmf qpid-client \
-	qpid-tools qpid-doc qemu kvm qemu-kvm libvirt-bin libvirt-doc rabbitmq-server \
+	qpid-tools qpid-doc qemu-kvm libvirt-bin libvirt-doc rabbitmq-server \
 	heat-api heat-api-cfn heat-engine python-trove python-troveclient trove-common trove-api \
 	trove-taskmanager
 

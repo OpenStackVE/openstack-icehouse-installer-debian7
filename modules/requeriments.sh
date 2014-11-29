@@ -164,6 +164,11 @@ echo ""
 # Se instalan las dependencias principales vía apt
 #
 apt-get -y update
+apt-get -y upgrade
+apt-get -y dist-upgrade
+
+dpkg -i ./libs/libusb-1.0-0_1.0.19-1~bpo70+1_amd64.deb
+
 apt-get -y install aptitude python-iniparse debconf-utils chkconfig
 
 echo "libguestfs0 libguestfs/update-appliance boolean false" > /tmp/libguest-seed.txt
@@ -194,11 +199,23 @@ else
 	/etc/init.d/iptables-persistent save
 	chkconfig iptables-persistent on
 	rm -f /tmp/iptables-seed.txt
-	aptitude -y install qemu kvm qemu-kvm libvirt-bin libvirt-doc
-	chkconfig libvirt-bin on
+	aptitude -y install qemu qemu-kvm libvirt-bin libvirt-doc
+	cp /etc/libvirt/libvirtd.conf /etc/libvirt/libvirtd.conf.ORIGINAL
+	echo "listen_tcp = 1" > /etc/libvirt/libvirtd.conf
+	echo "listen_tls = 0" >> /etc/libvirt/libvirtd.conf
+	chkconfig libvirtd on
 	rm -f /etc/libvirt/qemu/networks/default.xml
-	/etc/init.d/libvirt-bin restart
-	aptitude install dnsmasq dnsmasq-utils
+	/etc/init.d/libvirtd stop
+	/etc/init.d/libvirtd force-stop
+	rm -f /var/run/libvirtd.pid
+	# Y ademas hay que congelar la version de libnetcf1 por problemas con libvirt
+	# Si esto no se hace en debian7, libvirt no arranca (no al menos con icehouse)
+	apt-get --force-yes -y install libnetcf1=0.1.9-2	
+	echo "Package: libnetcf1" > /etc/apt/preferences.d/libnetcf1
+	echo "Pin: version *" >> /etc/apt/preferences.d/libnetcf1
+	echo "Pin-priority: -1" >> /etc/apt/preferences.d/libnetcf1
+	/etc/init.d/libvirtd start
+	aptitude -y install dnsmasq dnsmasq-utils
 	/etc/init.d/dnsmasq stop
 	chkconfig dnsmasq off
 	sed -r -i 's/ENABLED\=1/ENABLED\=0/' /etc/default/dnsmasq

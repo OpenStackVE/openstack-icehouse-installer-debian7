@@ -1,16 +1,17 @@
 #!/bin/bash
 #
-# Instalador desatendido para Openstack Havana sobre DEBIAN
+# Instalador desatendido para Openstack Havana sobre DEBIAN 7
 # Reynaldo R. Martinez P.
 # E-Mail: TigerLinux@Gmail.com
 # Primera versión (Grizzly): Julio 18 del 2013
 # Primera versión (Havana - Centos6): Octubre 17 del 2013
 # Primera versión (Havana - Debian7): Octubre 30 del 2013
 # Primera versión para Icehouse (centos): Abril 15 del 2014
-# Primera versión para Icehouse (debian: Abril 19 del 2014
+# Primera versión para Icehouse (debian): Abril 19 del 2014
+# Primera versión para Icehouse (ubuntu): Abril 23 del 2014
 #
 # Script principal
-# Versión 1.1.2.deb7 "Snow Lynx"
+# Versión 1.1.3.deb7 "Snow Lynx"
 # 22 de Octubre del 2014
 #
 
@@ -42,7 +43,7 @@ case $1 in
 	echo "INSTALADOR DE OPENSTACK ICEHOUSE PARA DEBIAN 7"
 	echo "Realizado por Reynaldo R. Martinez P."
 	echo "E-Mail: TigerLinux@Gmail.com"
-	echo "Versión 1.1.2.deb7 \"Snow Lynx\" - Octubre 22, 2014"
+	echo "Versión 1.1.3.deb7 \"Snow Lynx\" - Noviembre 29, 2014"
 	echo ""
 	echo "Se verificaran los prerequisitos"
 	echo "Si alguno de los prerequisitos falla, se informará y se detendrá el proceso"
