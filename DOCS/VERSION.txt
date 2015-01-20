@@ -1,5 +1,5 @@
 Version del instalador:
 
-1.1.4.deb7 "Snow Lynx"
+1.1.5.deb7 "Snow Lynx"
 
 SOLO PARA OPENSTACK ICEHOUSE !!!
